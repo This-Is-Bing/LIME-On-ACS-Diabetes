@@ -2,7 +2,7 @@
 
 #### Transformation Function ####
 # This function is to transform ACS dataset into categorical and continuous dataset
-RF20_TransformationFunction <- function(dataset, all_features) {
+RF20_TransformationFunction_noNorm <- function(dataset, all_features) {
   #get all features for rf20
   all_features <- all_features[which(all_features$rf20_fet %in% c("other", "yes")),]
   
@@ -30,6 +30,30 @@ RF20_TransformationFunction <- function(dataset, all_features) {
   return(dataset)
 }
 
+RF20_TransformationFunction <- function(dataset, all_features) {
+  #get all features for rf20
+  all_features <- all_features[which(all_features$rf20_fet %in% c("other", "yes")),]
+  
+  # Get selected features names with types
+  all_features_names <- all_features$VarNames[which(all_features$rf20_fet %in% c("yes"))]
+  cat_nb_features_names <- all_features$VarNames[which(all_features$Cat_Cont_Ord == "categorical_nonBinary")]
+  cat_features_names<- all_features$VarNames[which(all_features$Cat_Cont_Ord == "categorical_binary")] 
+  cont_features_names <- all_features$VarNames[which(all_features$Cat_Cont_Ord %in% c("continuous", "ordinal"))]
+  
+  # Change the types of variables in dataset
+  #categorical non binary
+  dataset[,cat_nb_features_names]<- factor(dataset[,cat_nb_features_names])
+  
+  #categorical
+  dataset[,cat_features_names] <- ifelse(dataset[,cat_features_names] == 1, 1, 0)
+  dataset[,cat_features_names] <- lapply(dataset[,cat_features_names], as.factor)
+
+  
+  # Changing ptoutcome to binary
+  dataset$ptoutcome <- as.factor(dataset$ptoutcome)
+  
+  return(dataset)
+}
 
 
 #### Transformation Function ####

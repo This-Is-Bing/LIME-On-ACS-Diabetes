@@ -35,6 +35,7 @@ all_features <- read_xlsx('./data/NCVD_features_dm.xlsx')
 
 ##### Structuring each feature ####
 training_ds <- RF20_TransformationFunction(training_ds, all_features)
+testing_ds_noNorm <- RF20_TransformationFunction_noNorm(testing_ds, all_features)
 testing_ds <- RF20_TransformationFunction(testing_ds, all_features)
 
 ##### Separating ACS, STEMI, NSTEMI
@@ -44,17 +45,20 @@ nstemi_testing_ds <- testing_ds[!testing_ds$acsstratum ==1, ]
 ##### Removing acsstratum, timiscorestemi, timiscorenstemi ####
 cols_to_remove <- c('acsstratum', 'timiscorestemi', 'timiscorenstemi')
 testing_ds <- testing_ds[, -which(names(testing_ds) %in% cols_to_remove)]
+testing_ds_noNorm <- testing_ds_noNorm[, -which(names(testing_ds_noNorm) %in% cols_to_remove)]
 stemi_testing_ds <- stemi_testing_ds[, -which(names(stemi_testing_ds) %in% cols_to_remove)]
 nstemi_testing_ds <- nstemi_testing_ds[, -which(names(nstemi_testing_ds) %in% cols_to_remove)]
 
 ##### Separating features and label ####
 X_training_ds <- training_ds[,-which(names(training_ds) == 'ptoutcome')]
 X_testing_ds <- testing_ds[,-which(names(testing_ds) == 'ptoutcome')]
+X_testing_ds_noNorm <- testing_ds_noNorm[,-which(names(testing_ds_noNorm) == 'ptoutcome')]
 X_stemi_testing_ds <- stemi_testing_ds[,-which(names(stemi_testing_ds) == 'ptoutcome')]
 X_nstemi_testing_ds <- nstemi_testing_ds[,-which(names(nstemi_testing_ds) == 'ptoutcome')]
 
 y_training_ds <- training_ds[,which(names(training_ds) == 'ptoutcome')]
 y_testing_ds <- testing_ds[,which(names(testing_ds) == 'ptoutcome')]
+y_testing_ds_noNorm <- testing_ds_noNorm[,which(names(testing_ds_noNorm) == 'ptoutcome')]
 y_stemi_testing_ds <- stemi_testing_ds[,which(names(stemi_testing_ds) == 'ptoutcome')]
 y_nstemi_testing_ds <- nstemi_testing_ds[,which(names(nstemi_testing_ds) == 'ptoutcome')]
 
@@ -89,12 +93,16 @@ nstemi_calibrated_pred_probs <- predict(nstemi_calibrated_model, data.frame(y = 
 
 ##### Reading Training dataset #####
 explainer <- lime(X_training_ds, raw_model)
-explanation <- explain(X_testing_ds[3, ], explainer, n_labels = 1, n_features = 10, n_permutations = 3, set.seed(10))
+y_testing_ds[117]
+explanation <- explain(X_testing_ds[1:5, ], explainer, n_labels = 1, n_features = 10, n_permutations = 3, set.seed(10))
 plot_features(explanation)
 
 death_cases <- predict(raw_model, X_testing_ds, type= 'raw')
 death_index <- death_cases == 'Death'
-explanation <- explain(head(X_testing_ds[death_index,],4), explainer, n_labels = 1, n_features = 10, n_permutations = 3, set.seed(10))
+explanation <- explain(head(X_testing_ds[death_index,],4), explainer, n_labels = 1, n_features = 20, n_permutations = 30, set.seed(10))
 plot_features(explanation)
 
-
+##### no Normalization ####
+explainer <- lime(X_training_ds, raw_model)
+explanation <- explain(X_testing_ds_noNorm[117, ], explainer, n_labels = 1, n_features = 20, n_permutations = 30, set.seed(10))
+plot_features(explanation)
